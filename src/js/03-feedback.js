@@ -1,37 +1,36 @@
 import throttle from 'lodash.throttle';
 
-const STORAGE_KEY = 'feedback-form-state';
-const formData = {};
+const form = document.querySelector('.feedback-form');
+const email = document.querySelector('input[name="email"]');
+const message = document.querySelector('textarea[name="message"]');
+const LOCALSTORAGE_KEY = 'feedback-form-state';
 
-const refs = {
-  form: document.querySelector('.feedback-form'),
-  textarea: document.querySelector('.feedback-form textarea'),
-  email: document.querySelector('.feedback-form input'),
+form.addEventListener(
+  'input',
+  throttle(e => {
+    const objectToSave = { email: email.value, message: message.value };
+    localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(objectToSave));
+  }, 500)
+);
+
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  console.log({ email: email.value, message: message.value });
+  form.reset();
+  localStorage.removeItem(LOCALSTORAGE_KEY);
+});
+
+const load = key => {
+  try {
+    const serializedState = localStorage.getItem(key);
+    return serializedState === null ? undefined : JSON.parse(serializedState);
+  } catch (error) {
+    console.error('Get state error: ', error.message);
+  }
 };
 
-populatedForm();
-
-refs.form.addEventListener('input', throttle(onFormInput, 500));
-refs.form.addEventListener('submit', onFormSubmit);
-
-function onFormInput(e) {
-  const formName = e.target.name;
-  const formValue = e.target.value;
-  formData[formName] = formValue;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-}
-
-function populatedForm() {
-  const savedFormData = JSON.parse(localStorage.getItem(STORAGE_KEY));
-  if (savedFormData) {
-    refs.email.value = savedFormData.email;
-    refs.textarea.value = savedFormData.message;
-  }
-}
-
-function onFormSubmit(e) {
-  e.preventDefault();
-  e.currentTarget.reset();
-  console.log(localStorage.getItem(STORAGE_KEY));
-  localStorage.removeItem(STORAGE_KEY);
+const storageData = load(LOCALSTORAGE_KEY);
+if (storageData) {
+  email.value = storageData.email;
+  message.value = storageData.message;
 }
